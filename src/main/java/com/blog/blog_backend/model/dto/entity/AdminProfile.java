@@ -1,4 +1,4 @@
-package com.blog.blog_backend.model.entity;
+package com.blog.blog_backend.model.dto.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
