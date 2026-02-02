@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+
 @Service
 public class CategoryService {
 
@@ -52,8 +53,26 @@ public class CategoryService {
         return category.get();
     }
 
+    // 슬러그로 카테고리 조회 (응답 DTO)
+    public CategoryResponse getBySlug(String slug) {
+        Category category = findBySlug(slug);
+        return toResponse(category);
+    }
+
+    // Entity -> CategoryResponse 변환
+    private CategoryResponse toResponse(Category category) {
+        CategoryResponse response = new CategoryResponse();
+        response.setId(category.getId());
+        response.setName(category.getName());
+        response.setSlug(category.getSlug());
+        response.setCreatedAt(category.getCreatedAt());
+        Long postCount = categoryRepository.countPostsByCategoryId(category.getId());
+        response.setPostCount(postCount != null ? postCount : 0L);
+        return response;
+    }
+
     // 카테고리 생성 - 기존 백엔드와 동일한 슬러그 생성 로직
-    public Category create(String name) {
+    public CategoryResponse create(String name) {
         // 슬러그 생성 (기존 백엔드와 동일)
         String slug = name
                 .toLowerCase()
@@ -71,14 +90,29 @@ public class CategoryService {
         category.setName(name);
         category.setSlug(slug);
 
-        return categoryRepository.save(category);
+        Category saved = categoryRepository.save(category);
+        return toResponse(saved);
     }
 
-    // 카테고리 삭제
+    // 슬러그로 카테고리 수정 (기존 백엔드: name만 수정, slug는 유지)
+    public CategoryResponse updateBySlug(String slug, String name) {
+        Category category = findBySlug(slug);
+        category.setName(name);
+        Category updated = categoryRepository.save(category);
+        return toResponse(updated);
+    }
+
+    // ID로 카테고리 삭제
     public void delete(Long id) {
         if (!categoryRepository.existsById(id)) {
             throw new RuntimeException("카테고리를 찾을 수 없습니다.");
         }
         categoryRepository.deleteById(id);
+    }
+
+    // 슬러그로 카테고리 삭제
+    public void deleteBySlug(String slug) {
+        Category category = findBySlug(slug);
+        categoryRepository.deleteById(category.getId());
     }
 }
