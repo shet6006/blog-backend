@@ -1,6 +1,6 @@
 package com.blog.blog_backend.repository;
 
-import com.blog.blog_backend.model.dto.entity.AdminProfile;
+import com.blog.blog_backend.model.entity.AdminProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

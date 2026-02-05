@@ -1,6 +1,6 @@
 package com.blog.blog_backend.repository;
 
-import com.blog.blog_backend.model.dto.entity.Category;
+import com.blog.blog_backend.model.entity.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

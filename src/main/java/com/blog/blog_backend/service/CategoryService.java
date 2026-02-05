@@ -1,7 +1,7 @@
 package com.blog.blog_backend.service;
 
 import com.blog.blog_backend.model.dto.response.CategoryResponse;
-import com.blog.blog_backend.model.dto.entity.Category;
+import com.blog.blog_backend.model.entity.Category;
 import com.blog.blog_backend.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

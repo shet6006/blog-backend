@@ -19,6 +19,10 @@ target/
 *.iml
 *.ipr
 
+# Spring Boot 로컬 설정 (비밀번호 등 올리면 안 됨)
+**/application-local.yml
+**/application.yml
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/

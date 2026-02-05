@@ -1,4 +1,4 @@
-package com.blog.blog_backend.model.dto.entity;
+package com.blog.blog_backend.model.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
