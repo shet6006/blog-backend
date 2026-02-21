@@ -42,6 +42,11 @@ public class RateLimitUtil {
         return allow("comments-post-", clientId, 10, WINDOW_MS);
     }
 
+    /** 게시글 작성 POST: 분당 5회 (기존 Next.js와 동일) */
+    public static boolean allowPostsPost(String clientId) {
+        return allow("posts-post-", clientId, 5, WINDOW_MS);
+    }
+
     private static boolean allow(String keyPrefix, String clientId, int maxRequests, long windowMs) {
         long now = System.currentTimeMillis();
         String key = keyPrefix + clientId;
