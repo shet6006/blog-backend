@@ -19,8 +19,9 @@ public class Post {
     @Column(columnDefinition = "TEXT")
     private String excerpt;
 
-    @Column(name = "category_id")
-    private Integer categoryId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     @Column(nullable = false, unique = true, length = 255)
     private String slug;
@@ -64,7 +65,7 @@ public class Post {
     }
 
     public Integer getCategoryId() {
-        return categoryId;
+        return category != null ? category.getId().intValue() : null;
     }
 
     public String getSlug() {
@@ -116,8 +117,12 @@ public class Post {
         this.excerpt = excerpt;
     }
 
-    public void setCategoryId(Integer categoryId) {
-        this.categoryId = categoryId;
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
+    public Category getCategory() {
+        return category;
     }
 
     public void setSlug(String slug) {
