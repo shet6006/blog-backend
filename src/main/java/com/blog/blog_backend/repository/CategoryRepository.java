@@ -1,6 +1,7 @@
 package com.blog.blog_backend.repository;
 
 import com.blog.blog_backend.model.entity.Category;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -12,6 +13,10 @@ import java.util.Optional;
 public interface CategoryRepository extends JpaRepository<Category, Long> {
     Optional<Category> findBySlug(String slug);
     Optional<Category> findByName(String name);
+
+    default List<Category> findAllByOrderByCreatedAtDesc() {
+        return findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
 
     // 게시글 수를 포함한 카테고리 조회 (기존 백엔드와 동일한 쿼리)
     @Query("SELECT c FROM Category c LEFT JOIN Post p ON c.id = p.category.id AND p.isPublic = true " +

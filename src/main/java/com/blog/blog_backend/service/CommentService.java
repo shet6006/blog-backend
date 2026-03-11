@@ -4,6 +4,7 @@ import com.blog.blog_backend.model.dto.request.CreateCommentRequest;
 import com.blog.blog_backend.model.dto.response.CommentResponse;
 import com.blog.blog_backend.model.entity.Comment;
 import com.blog.blog_backend.model.entity.Post;
+import com.blog.blog_backend.repository.AdminRepository;
 import com.blog.blog_backend.repository.CommentRepository;
 import com.blog.blog_backend.repository.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -28,6 +30,8 @@ public class CommentService {
     private CommentRepository commentRepository;
     @Autowired
     private PostRepository postRepository;
+    @Autowired
+    private AdminRepository adminRepository;
 
     /**
      * GET /api/comments/{slug}
@@ -71,6 +75,56 @@ public class CommentService {
         commentRepository.save(comment);
 
         updatePostCommentsCount(post);
+    }
+
+    /**
+     * GET /api/comments?postId= - postId로 댓글 목록 (created_at DESC, is_admin from admin_profile.name)
+     */
+    public List<CommentResponse> getCommentsByPostId(Long postId) {
+        if (postId == null || postId < 1) {
+            throw new RuntimeException("게시글 ID가 필요합니다.");
+        }
+        if (!postRepository.existsById(postId)) {
+            throw new RuntimeException("존재하지 않는 게시글입니다.");
+        }
+        List<Comment> comments = commentRepository.findByPostIdOrderByCreatedAtDesc(postId);
+        return comments.stream().map(this::toResponseWithIsAdmin).collect(Collectors.toList());
+    }
+
+    /**
+     * POST /api/comments - postId로 댓글 등록
+     */
+    public Map<String, Object> createCommentByPostId(CreateCommentRequest request) {
+        Long postId = request.getPostId();
+        if (postId == null || postId < 1 || isBlank(request.getAuthorName()) || isBlank(request.getContent()) || isBlank(request.getDeviceId())) {
+            throw new RuntimeException("필수 정보가 누락되었습니다.");
+        }
+        validateCreateRequest(request);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 게시글입니다."));
+
+        String authorName = sanitizeAuthorName(request.getAuthorName());
+        String content = request.getContent().trim();
+
+        Comment comment = new Comment();
+        comment.setPostId(post.getId());
+        comment.setAuthorName(authorName);
+        comment.setContent(content);
+        comment.setDeviceId(request.getDeviceId());
+        comment.setCreatedAt(LocalDateTime.now());
+        commentRepository.save(comment);
+
+        updatePostCommentsCount(post);
+
+        return Map.of(
+                "id", comment.getId(),
+                "postId", postId,
+                "authorName", authorName,
+                "content", content,
+                "deviceId", comment.getDeviceId(),
+                "createdAt", comment.getCreatedAt() != null ? comment.getCreatedAt().toString() : ""
+        );
     }
 
     /**
@@ -131,6 +185,10 @@ public class CommentService {
     }
 
     private CommentResponse toResponse(Comment c) {
+        return toResponseWithIsAdmin(c);
+    }
+
+    private CommentResponse toResponseWithIsAdmin(Comment c) {
         CommentResponse r = new CommentResponse();
         r.setId(c.getId());
         r.setPostId(c.getPostId());
@@ -138,7 +196,9 @@ public class CommentService {
         r.setContent(c.getContent());
         r.setDeviceId(c.getDeviceId());
         r.setCreatedAt(c.getCreatedAt());
-        r.setIsAdmin(c.getIsAdmin());
+        boolean isAdmin = c.getIsAdmin() != null && c.getIsAdmin()
+                || adminRepository.existsByName(c.getAuthorName());
+        r.setIsAdmin(isAdmin);
         return r;
     }
 }

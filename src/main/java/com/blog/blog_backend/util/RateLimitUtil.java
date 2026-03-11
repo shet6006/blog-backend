@@ -47,6 +47,21 @@ public class RateLimitUtil {
         return allow("posts-post-", clientId, 5, WINDOW_MS);
     }
 
+    /** 로그인: 분당 5회 (기존 Next.js와 동일) */
+    public static boolean allowLogin(String clientId) {
+        return allow("login-", clientId, 5, WINDOW_MS);
+    }
+
+    /** Likes GET: 분당 60회 */
+    public static boolean allowLikesGet(String clientId) {
+        return allow("likes-get-", clientId, 60, WINDOW_MS);
+    }
+
+    /** Likes POST: 분당 20회 */
+    public static boolean allowLikesPost(String clientId) {
+        return allow("likes-post-", clientId, 20, WINDOW_MS);
+    }
+
     private static boolean allow(String keyPrefix, String clientId, int maxRequests, long windowMs) {
         long now = System.currentTimeMillis();
         String key = keyPrefix + clientId;

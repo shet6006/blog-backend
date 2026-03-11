@@ -29,6 +29,12 @@ public class AdminProfile {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
+    @Column(name = "github_username")
+    private String githubUsername;
+
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
