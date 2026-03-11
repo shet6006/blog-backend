@@ -11,6 +11,9 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     /** 해당 글의 댓글 목록, created_at 오름차순 (GET /api/comments/{slug}) */
     List<Comment> findByPostIdOrderByCreatedAtAsc(Long postId);
 
+    /** 해당 글의 댓글 목록, created_at 내림차순 (GET /api/comments?postId=) */
+    List<Comment> findByPostIdOrderByCreatedAtDesc(Long postId);
+
     /** 해당 글의 댓글 개수 (comments_count 업데이트용) */
     long countByPostId(Long postId);
 
@@ -19,4 +22,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     /** 해당 글의 댓글 전부 삭제 (DELETE body에 commentId 없을 때) */
     void deleteByPostId(Long postId);
+
+    /** 관리자용: 모든 댓글 created_at 내림차순 */
+    List<Comment> findAllByOrderByCreatedAtDesc();
 }

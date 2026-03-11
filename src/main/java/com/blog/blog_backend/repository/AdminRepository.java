@@ -13,5 +13,5 @@ public interface AdminRepository extends JpaRepository<AdminProfile, String> {
     // - findAll() -> List<AdminProfile>
     // - existsById(String id) -> boolean
 
-    // 기존 백엔드와 동일하게 id(username)로만 조회하므로 추가 메서드 불필요
+    boolean existsByName(String name);
 }

@@ -30,6 +30,7 @@ public class VisitorController {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class ErrorBody {
         private String error;
         public ErrorBody(String error) { this.error = error; }
