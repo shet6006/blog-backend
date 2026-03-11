@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -44,14 +45,13 @@ public class PostService {
      * @param limit 페이지당 개수
      * @param sortBy "likes" 또는 "created_at"
      */
+    @Transactional(readOnly = true)
     public PostListResponse findAll(boolean includePrivate, String category, String search,
                                     int page, int limit, String sortBy) {
         // 페이지네이션 제한 (기존 Next.js와 동일)
         int validatedPage = page < 1 ? 1 : Math.min(page, 1000);
         int validatedLimit = limit < 1 ? 10 : Math.min(limit, 100);
-        if (search != null && search.length() > 100) {
-            search = search.substring(0, 100);
-        }
+        final String searchTerm = (search != null && search.length() > 100) ? search.substring(0, 100) : search;
 
         Sort sort = "likes".equals(sortBy)
                 ? Sort.by(Sort.Direction.DESC, "likesCount")
@@ -61,26 +61,32 @@ public class PostService {
         Specification<Post> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            // 비공개 제외 (includePrivate=false면 공개만)
             if (!includePrivate) {
-                predicates.add(cb.isTrue(root.get("isPublic")));
+                predicates.add(cb.equal(root.get("isPublic"), true));
             }
 
-            if (category != null && !category.isBlank() && !"All".equals(category)) {
+            // category 또는 search 시에만 category 조인 (한 번만)
+            boolean needCategoryJoin = (category != null && !category.isBlank() && !"All".equals(category))
+                    || (searchTerm != null && !searchTerm.isBlank());
+
+            if (needCategoryJoin) {
                 var catJoin = root.join("category", JoinType.LEFT);
-                predicates.add(cb.equal(catJoin.get("name"), category));
+                if (category != null && !category.isBlank() && !"All".equals(category)) {
+                    predicates.add(cb.equal(catJoin.get("name"), category));
+                }
+                if (searchTerm != null && !searchTerm.isBlank()) {
+                    String pattern = "%" + searchTerm + "%";
+                    predicates.add(cb.or(
+                            cb.like(root.get("title"), pattern),
+                            cb.like(root.get("content"), pattern),
+                            cb.like(catJoin.get("name"), pattern)
+                    ));
+                }
             }
 
-            if (search != null && !search.isBlank()) {
-                String pattern = "%" + search + "%";
-                var catJoin = root.join("category", JoinType.LEFT);
-                predicates.add(cb.or(
-                        cb.like(root.get("title"), pattern),
-                        cb.like(root.get("content"), pattern),
-                        cb.like(catJoin.get("name"), pattern)
-                ));
-            }
-
-            return cb.and(predicates.toArray(new Predicate[0]));
+            query.distinct(true);  // JOIN 시 중복 행 방지
+            return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
         };
 
         Page<Post> postPage = postRepository.findAll(spec, pageable);
@@ -98,6 +104,7 @@ public class PostService {
      * GET /api/posts/{slug} - slug로 게시글 상세 조회
      * @param includePrivate true면 비공개 글도 조회 (관리자용)
      */
+    @Transactional(readOnly = true)
     public PostResponse getBySlug(String slug, boolean includePrivate) {
         Optional<Post> opt = postRepository.findBySlug(slug);
         if (opt.isEmpty()) {
@@ -113,12 +120,16 @@ public class PostService {
     /**
      * POST /api/posts - 게시글 생성 (기존 Next.js와 동일)
      */
+    @Transactional
     public PostResponse create(CreatePostRequest req, String authorId) {
         validateCreateRequest(req);
         Category category = categoryRepository.findById(req.getCategoryId().longValue())
                 .orElseThrow(() -> new RuntimeException("잘못된 카테고리입니다."));
 
         String slug = generateSlugFromTitle(req.getTitle());
+        if (postRepository.findBySlug(slug).isPresent()) {
+            throw new RuntimeException("이미 사용 중인 slug입니다.");
+        }
         String excerpt = generateExcerpt(req.getContent());
 
         Post post = new Post();
@@ -139,6 +150,7 @@ public class PostService {
     /**
      * PUT /api/posts/{slug} - 게시글 수정 (기존 Next.js와 동일)
      */
+    @Transactional
     public PostResponse update(String slug, UpdatePostRequest req) {
         Post post = postRepository.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다."));
@@ -169,6 +181,8 @@ public class PostService {
     /**
      * DELETE /api/posts/{slug} - 게시글 삭제 (기존 Next.js와 동일)
      */
+    @Transactional
+    @SuppressWarnings("null")
     public void delete(String slug) {
         Post post = postRepository.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다."));

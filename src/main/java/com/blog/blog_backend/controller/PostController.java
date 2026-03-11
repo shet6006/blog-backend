@@ -45,8 +45,9 @@ public class PostController {
                     includePrivate, category, search, page, limit, sortBy);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch posts"));
+                    .body(Map.of("error", "Failed to fetch posts", "message", e.getMessage() != null ? e.getMessage() : ""));
         }
     }
 
@@ -67,11 +68,14 @@ public class PostController {
         }
     }
 
-    /** POST /api/posts - Rate limit 5/min, authorId는 JWT에서 (없으면 admin) */
+    /** POST /api/posts - 관리자만, Rate limit 5/min */
     @PostMapping
     public ResponseEntity<?> createPost(
             @RequestBody CreatePostRequest request,
             HttpServletRequest httpRequest) {
+        if (!authUtil.isAuthenticatedAdmin(httpRequest)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", NO_PERMISSION));
+        }
         String clientId = RateLimitUtil.getClientIdentifier(httpRequest);
         if (!RateLimitUtil.allowPostsPost(clientId)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)

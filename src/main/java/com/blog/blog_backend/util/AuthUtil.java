@@ -12,7 +12,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * 기존 Next.js와 동일: token 쿠키의 JWT 검증, admin_profile 테이블로 관리자 확인
@@ -45,13 +46,27 @@ public class AuthUtil {
             return null;
         }
         try {
-            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+            SecretKey key = deriveKey(jwtSecret);
             Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
             Object userId = claims.get("userId");
             return userId != null ? userId.toString() : null;
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /** JJWT HMAC-SHA256은 최소 32바이트 필요. 짧은 시크릿은 SHA-256 해시로 32바이트 확보 */
+    public static SecretKey deriveKey(String secret) {
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < 32) {
+            try {
+                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                keyBytes = digest.digest(keyBytes);
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("SHA-256 not available", e);
+            }
+        }
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     private String getTokenFromCookie(HttpServletRequest request) {

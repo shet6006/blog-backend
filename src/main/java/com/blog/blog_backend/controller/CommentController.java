@@ -4,6 +4,7 @@ import com.blog.blog_backend.model.dto.request.CreateCommentRequest;
 import com.blog.blog_backend.model.dto.request.DeleteCommentRequest;
 import com.blog.blog_backend.model.dto.response.CommentResponse;
 import com.blog.blog_backend.service.CommentService;
+import com.blog.blog_backend.util.AuthUtil;
 import com.blog.blog_backend.util.RateLimitUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,54 @@ public class CommentController {
 
     @Autowired
     private CommentService commentService;
+    @Autowired
+    private AuthUtil authUtil;
+
+    /** GET /api/comments?postId= - postId로 댓글 목록 (기존 blog와 동일) */
+    @GetMapping
+    public ResponseEntity<?> getCommentsByPostId(@RequestParam(required = false) Long postId) {
+        if (postId == null) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "게시글 ID가 필요합니다."));
+        }
+        try {
+            return ResponseEntity.ok(commentService.getCommentsByPostId(postId));
+        } catch (RuntimeException e) {
+            if ("존재하지 않는 게시글입니다.".equals(e.getMessage())) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", e.getMessage()));
+            }
+            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "댓글을 불러오는데 실패했습니다."));
+        }
+    }
+
+    /** POST /api/comments - postId로 댓글 등록 (기존 blog와 동일) */
+    @PostMapping
+    public ResponseEntity<?> createCommentByPostId(
+            @RequestBody CreateCommentRequest request,
+            HttpServletRequest httpRequest) {
+        try {
+            return ResponseEntity.ok(commentService.createCommentByPostId(request));
+        } catch (RuntimeException e) {
+            if ("존재하지 않는 게시글입니다.".equals(e.getMessage())) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", e.getMessage()));
+            }
+            if ("필수 정보가 누락되었습니다.".equals(e.getMessage())) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", e.getMessage()));
+            }
+            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "댓글 작성에 실패했습니다."));
+        }
+    }
 
     /** GET /api/comments/{slug} - 해당 글의 댓글 목록 (created_at ASC) */
     @GetMapping("/{slug}")
@@ -70,12 +119,16 @@ public class CommentController {
         }
     }
 
-    /** DELETE /api/comments/{slug} - commentId 있으면 해당 댓글만, 없으면 해당 글 댓글 전부 삭제 */
+    /** DELETE /api/comments/{slug} - 관리자만. commentId 있으면 해당 댓글만, 없으면 해당 글 댓글 전부 삭제 */
     @DeleteMapping("/{slug}")
     public ResponseEntity<?> deleteComment(
             @PathVariable String slug,
             @RequestBody(required = false) DeleteCommentRequest body,
             HttpServletRequest request) {
+        if (!authUtil.isAuthenticatedAdmin(request)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "인증되지 않은 요청입니다."));
+        }
         Long commentId = (body != null) ? body.getCommentId() : null;
         try {
             commentService.deleteComment(slug, commentId);

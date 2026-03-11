@@ -1,12 +1,14 @@
 package com.blog.blog_backend.controller;
 
 import com.blog.blog_backend.model.dto.response.CategoryResponse;
-import com.blog.blog_backend.model.entity.Category;
 import com.blog.blog_backend.service.CategoryService;
+import com.blog.blog_backend.util.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -17,6 +19,8 @@ public class CategoryController {
 
     @Autowired
     private CategoryService categoryService;
+    @Autowired
+    private AuthUtil authUtil;
 
     // GET /api/categories - 카테고리 목록 조회 (기존 백엔드와 동일)
     @GetMapping
@@ -30,9 +34,13 @@ public class CategoryController {
         }
     }
 
-    // POST /api/categories - 카테고리 생성 (기존 백엔드와 동일)
+    // POST /api/categories - 카테고리 생성 (관리자만)
     @PostMapping
-    public ResponseEntity<?> createCategory(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> createCategory(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
+        if (!authUtil.isAuthenticatedAdmin(httpRequest)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("인증되지 않은 요청입니다."));
+        }
         try {
             String name = request.get("name");
 
@@ -67,9 +75,13 @@ public class CategoryController {
         }
     }
 
-    // PUT /api/categories/{slug} - slug로 카테고리 수정 (기존 백엔드와 동일)
+    // PUT /api/categories/{slug} - slug로 카테고리 수정 (관리자만)
     @PutMapping("/{slug}")
-    public ResponseEntity<?> updateCategoryBySlug(@PathVariable String slug, @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> updateCategoryBySlug(@PathVariable String slug, @RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
+        if (!authUtil.isAuthenticatedAdmin(httpRequest)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("인증되지 않은 요청입니다."));
+        }
         try {
             String name = request.get("name");
             if (name == null || name.isEmpty()) {
@@ -87,9 +99,13 @@ public class CategoryController {
         }
     }
 
-    // DELETE /api/categories/{slug} - slug로 카테고리 삭제 (기존 백엔드와 동일)
+    // DELETE /api/categories/{slug} - slug로 카테고리 삭제 (관리자만)
     @DeleteMapping("/{slug}")
-    public ResponseEntity<?> deleteCategoryBySlug(@PathVariable String slug) {
+    public ResponseEntity<?> deleteCategoryBySlug(@PathVariable String slug, HttpServletRequest httpRequest) {
+        if (!authUtil.isAuthenticatedAdmin(httpRequest)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("인증되지 않은 요청입니다."));
+        }
         try {
             categoryService.deleteBySlug(slug);
             return ResponseEntity.ok(new MessageResponse("카테고리가 삭제되었습니다."));
@@ -102,7 +118,8 @@ public class CategoryController {
         }
     }
 
-    // 에러 응답 클래스
+    // 에러 응답 클래스 (Jackson 직렬화용 getter/setter 필요)
+    @SuppressWarnings("unused")
     private static class ErrorResponse {
         private String error;
 
@@ -119,7 +136,7 @@ public class CategoryController {
         }
     }
 
-    // 메시지 응답 클래스
+    @SuppressWarnings("unused")
     private static class MessageResponse {
         private String message;
 
