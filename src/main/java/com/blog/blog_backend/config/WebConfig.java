@@ -14,7 +14,14 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(@NonNull CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOriginPatterns("http://localhost:3000", "http://127.0.0.1:3000")
+            .allowedOriginPatterns(
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://43.201.28.188",                 // EC2 직접 테스트용 (원하면)
+            "https://d31a39ohh8f12p.cloudfront.net", // CloudFront
+            "https://kimdongwon.me", // 배포용
+            "https://www.kimdongwon.me" // 배포용
+    )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowCredentials(true)
                 .allowedHeaders("*")
