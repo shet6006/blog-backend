@@ -41,7 +41,7 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key_path: key.pem
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ec2-user/blogg/blog-backend
             pm2 restart blog-backend
