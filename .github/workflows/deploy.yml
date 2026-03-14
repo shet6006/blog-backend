@@ -1,4 +1,4 @@
-# blog-backend 백엔드 CD - master에 push/merge 시 EC2에 자동 배포
+# blog-backend 백엔드 CD - master에 push/merge 시 EC2에서 pull → 빌드 → 재시작
 name: Deploy Blog Backend to EC2
 
 on:
@@ -9,29 +9,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Build JAR
-        run: mvn -B package -DskipTests
-
-      - name: Copy JAR to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "target/blog-backend-0.0.1-SNAPSHOT.jar"
-          target: "/home/ec2-user/blogg/blog-backend/"
-
-      - name: Restart backend on EC2
+      - name: Deploy on EC2 (pull, build, restart)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -39,5 +17,8 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ec2-user/blogg/blog-backend
+            git pull origin master
+            ./mvnw -B package -DskipTests
             pm2 restart blog-backend
           script_stop: true
+          command_timeout: 15m
