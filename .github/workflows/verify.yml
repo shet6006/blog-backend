@@ -22,7 +22,9 @@ jobs:
           cache: maven
 
       - name: Run tests
-        run: ./mvnw -B test
+        run: |
+          chmod +x ./mvnw
+          ./mvnw -B test
 
       - name: Build production container
         run: docker build --tag blog-backend:verify .
