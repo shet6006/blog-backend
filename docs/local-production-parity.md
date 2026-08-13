@@ -1,37 +1,28 @@
-# Local and production parity
+# 로컬과 운영 환경의 차이 및 통합 방법
 
-## Differences found
-
-| Concern | Previous local state | Current production | Target shared model |
+| 항목 | 이전 로컬 | 기존 운영 | 새 공통 기준 |
 |---|---|---|---|
-| Operating system | Windows, future macOS | Amazon Linux 2023 | Docker images for app and DB |
-| Java | Unpinned local JDK | Corretto 17 | Java 17 container image |
-| Database | Missing configuration | MariaDB 10.5 on EC2 | MariaDB 10.5 Compose locally; persistent production volume |
-| Backend settings | Ignored `application.yml` | Server-only YAML with secrets | Committed placeholder YAML plus environment variables |
-| Frontend | Next dev/build | Next server under PM2 | Static Nginx build if dynamic routes can be adapted safely |
-| Uploads | Repository-relative | Frontend `public/uploads` plus backend storage configuration | `/data/uploads` persistent volume |
-| Secrets | Ad hoc `.env`/server YAML | Server file and GitHub SSH key | local `.env`; AWS Secrets Manager in production |
-| Deployment | Manual local commands | Build on EC2 over public SSH | Build once in GitHub Actions, ECR image, deploy by SSM |
-| Health | No shared probe | Process presence only | `/actuator/health` plus container health check |
-| Tests | Backend failed without production DB config | Not part of deployment | H2 unit/context tests and Compose integration checks |
+| OS | Windows, 향후 macOS | Amazon Linux 2023 | Docker 이미지 사용 |
+| Java | PC 설치 버전에 의존 | Corretto 17 | Java 17 이미지 |
+| DB | 설정 누락 | EC2 MariaDB 10.5 | 로컬·운영 모두 MariaDB 10.5 Compose |
+| 백엔드 설정 | 무시되는 YAML | 서버 전용 YAML | Git에는 환경변수 자리표시자만 저장 |
+| 프론트 | Next 개발 서버 | Next+PM2 | 정적 빌드+Nginx 이미지 |
+| 업로드 | 저장소 상대경로 | 서버 파일 | `/srv/blog/uploads` 영구 볼륨 |
+| 비밀값 | 임의 `.env` | 서버 파일·SSH 키 | 로컬 `.env`, 운영 Secrets Manager |
+| 배포 | 수동 실행 | SSH 후 서버 빌드 | GitHub 빌드 → ECR → SSM 배포 |
+| 상태 검사 | 없음 | 프로세스 존재 여부 | Actuator와 Docker healthcheck |
+| 테스트 | 운영 DB 설정 없으면 실패 | 배포에서 생략 | H2 테스트와 Compose 검증 |
 
-## Changes already made
+이미 적용한 내용:
 
-- Added a committed, secret-free `application.yml` contract.
-- Moved DB, JWT, CORS, port and storage configuration to environment variables.
-- Removed production IP/domain hardcoding from backend CORS configuration.
-- Added an H2 test configuration so a clean clone can run tests.
-- Added a Java 17 non-root Docker image and health check.
-- Added MariaDB 10.5 Compose configuration with persistent volumes.
+- Node 20/npm 10, Java 17, MariaDB 10.5 버전 고정
+- 백엔드 DB·JWT·CORS·업로드 설정을 공통 환경변수로 전환
+- 운영 IP와 CloudFront 주소 하드코딩 제거
+- DB 없이 실행 가능한 H2 테스트 추가
+- 백엔드 비-root Docker 이미지와 상태 검사 추가
+- Next.js 정적 export와 Nginx 이미지 추가
+- 임의 게시글 및 편집 URL의 정적 라우팅 스모크 테스트 추가
+- SSM 배포, 헬스체크, 실패 시 이전 이미지 롤백 추가
 
-## Remaining differences
-
-- The frontend has two dynamic `[slug]` routes that block a naive Next.js static
-  export. These must be adapted and regression-tested before removing the Next
-  server.
-- Windows OneDrive locks large `node_modules` trees during clean installs. Clone
-  development repositories outside OneDrive on both Windows and macOS.
-- Production data must be restored into the target MariaDB volume and checked by
-  table counts and functional tests.
-- Production secrets will be injected from AWS only after the new account is
-  connected.
+Windows OneDrive는 `node_modules` 파일을 잠가 설치를 방해할 수 있다. Windows와 Mac 모두
+동기화 폴더가 아닌 `~/Projects` 같은 일반 개발 폴더에 clone하는 것을 권장한다.
