@@ -28,3 +28,17 @@ jobs:
 
       - name: Build production container
         run: docker build --tag blog-backend:verify .
+
+      - name: Validate deployment harness
+        env:
+          DB_NAME: blog
+          DB_USER: blog
+          DB_PASSWORD: test-password
+          DB_ROOT_PASSWORD: test-root-password
+          JWT_SECRET: test-only-jwt-secret-that-is-long-enough
+          CORS_ALLOWED_ORIGINS: http://localhost:3000
+          FRONTEND_IMAGE: nginx:1.28-alpine
+          BACKEND_IMAGE: blog-backend:verify
+        run: |
+          bash -n deploy/*.sh
+          docker compose --file deploy/compose.production.yaml config --quiet
