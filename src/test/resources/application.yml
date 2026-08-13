@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:blog;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+
+app:
+  jwt-secret: test-only-jwt-secret-that-is-long-enough-for-hmac
+
+storage:
+  location: ${java.io.tmpdir}/blog-test-uploads
