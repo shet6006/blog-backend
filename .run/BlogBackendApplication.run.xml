@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="BlogBackendApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="blog-backend" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.blog.blog_backend.BlogBackendApplication" />
+    <option name="ACTIVE_PROFILES" value="local" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
