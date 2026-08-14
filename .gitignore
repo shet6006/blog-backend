@@ -21,6 +21,7 @@ target/
 
 # Spring Boot 로컬 설정
 **/application-local.yml
+!src/main/resources/application-local.yml
 
 ### NetBeans ###
 /nbproject/private/

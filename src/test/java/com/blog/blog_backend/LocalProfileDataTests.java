@@ -1,0 +1,35 @@
+package com.blog.blog_backend;
+
+import com.blog.blog_backend.model.entity.AdminProfile;
+import com.blog.blog_backend.model.entity.Post;
+import com.blog.blog_backend.repository.AdminRepository;
+import com.blog.blog_backend.repository.PostRepository;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest
+@ActiveProfiles("local")
+class LocalProfileDataTests {
+
+    @Autowired
+    private AdminRepository adminRepository;
+
+    @Autowired
+    private PostRepository postRepository;
+
+    @Test
+    void initializesLocalAdminAndSamplePost() {
+        AdminProfile admin = adminRepository.findById("admin").orElseThrow();
+        Post post = postRepository.findBySlug("local-development-sample").orElseThrow();
+
+        assertThat(admin.getName()).isEqualTo("Local Admin");
+        assertThat(new BCryptPasswordEncoder().matches("admin1234", admin.getPassword())).isTrue();
+        assertThat(post.getAuthorId()).isEqualTo(admin.getId());
+        assertThat(post.getIsPublic()).isTrue();
+    }
+}

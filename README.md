@@ -4,15 +4,30 @@
 
 ## 빠른 시작
 
-Docker Desktop과 Docker Compose가 필요합니다.
+Java 17에서 `local` 프로필로 실행합니다. 별도의 MySQL/MariaDB나
+환경변수는 필요 없습니다.
+
+```bash
+SPRING_PROFILES_ACTIVE=local ./mvnw spring-boot:run
+```
+
+`local` 프로필은 매번 새 인메모리 H2 DB를 만들고 다음 데이터를 초기화합니다.
+
+- 관리자 아이디: `admin`
+- 관리자 비밀번호: `admin1234`
+- `개발` 카테고리와 샘플 게시글 1개
+
+API는 `http://localhost:8080`, 상태 확인은 `http://localhost:8080/actuator/health`에서
+사용할 수 있습니다. 프로세스를 종료하면 로컬 DB는 사라지고 다음 실행에서 다시
+생성됩니다.
+
+Docker Compose는 운영과 동일한 MariaDB/컨테이너 구성을 확인할 때만 사용합니다.
 
 ```bash
 docker compose up --build
 ```
 
-API는 `http://localhost:8080`, 상태 확인은 `http://localhost:8080/actuator/health`에서 사용할 수 있습니다.
-
-로컬 기본값을 바꿀 때만 `.env.example`을 `.env`로 복사합니다. `.env`, DB 덤프, 개인 키, 운영 인증 정보는 절대 커밋하지 않습니다.
+`.env`, DB 덤프, 개인 키, 운영 인증 정보는 절대 커밋하지 않습니다.
 
 ## 테스트
 
@@ -28,7 +43,8 @@ Windows:
 .\mvnw.cmd test
 ```
 
-테스트는 격리된 H2 DB를 사용합니다. 로컬 실행은 기존 운영 환경과 같은 MariaDB 10.5를 Compose로 사용합니다.
+테스트와 `local` 프로필은 각각 격리된 H2 DB를 사용합니다. 운영은 MariaDB 10.5와
+EC2의 영구 볼륨을 사용합니다.
 
 ## 문서
 

@@ -19,5 +19,10 @@
 프론트는 `NEXT_PUBLIC_API_URL`만 사용한다. Nginx가 동일 도메인의 `/api`를 프록시하는
 운영에서는 빈 값이며, 분리된 로컬 개발에서는 `http://localhost:8080`을 사용한다.
 
+`SPRING_PROFILES_ACTIVE=local`로 실행하면 위 backend 환경변수 대신 로컬 전용 H2
+설정을 사용한다. 이 프로필은 실행할 때마다 DB를 새로 만들고 관리자와 샘플 글을
+초기화한다. 운영 Compose는 `JPA_DDL_AUTO=validate`와 EC2의 `/srv/blog/mysql`,
+`/srv/blog/uploads` 영구 경로를 사용하므로 로컬 초기화와 분리된다.
+
 `JWT_SECRET`을 교체하면 기존 로그인 쿠키만 무효화된다. 사용자·글·댓글·조회수는 DB
 백업으로, 업로드 이미지는 파일 백업으로 별도 보존한다.
