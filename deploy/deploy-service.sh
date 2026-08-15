@@ -55,6 +55,10 @@ fi
 
 echo "deployment failed; restoring previous image" >&2
 install -m 600 "$previous_images" "$images_env"
-compose pull "$service" || true
-compose up --detach --no-deps "$service"
+if grep -q "^${image_key}=." "$images_env"; then
+  compose pull "$service" || true
+  compose up --detach --no-deps "$service"
+else
+  echo "no previous image is available for the first deployment" >&2
+fi
 exit 1

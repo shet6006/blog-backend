@@ -132,6 +132,7 @@ sudo BLOG_RESTORE_CONFIRM=NEW_BLOG_EMPTY_DATABASE \
 - [ ] 프론트 정적 빌드에 `avatar_admin.png`가 포함됐는지 확인한다.
 - [ ] 테이블별 정확한 행 수를 기존 서버와 비교한다.
 - [ ] 업로드 파일 수 7개와 SHA-256을 비교한다.
+- [ ] 최초 DB 컨테이너 기동 후 `migrate-legacy-schema.sh`로 기존 `INT` ID를 엔티티의 `BIGINT`에 맞춘다.
 
 ## 7. 최초 배포 및 검증
 
