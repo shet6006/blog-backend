@@ -10,6 +10,7 @@
 | `DB_ROOT_PASSWORD` | 예 | MariaDB 관리자 암호 | EC2 `/etc/blog/runtime.env` |
 | `DB_NAME` | 예 | DB 이름 | EC2 `/etc/blog/runtime.env` |
 | `DB_POOL_SIZE` | 아니오 | DB 연결 수 | 배포 설정 |
+| `JAVA_TOOL_OPTIONS` | 아니오 | 작은 EC2의 JVM 메모리 제한 | EC2 `/etc/blog/runtime.env` |
 | `JPA_DDL_AUTO` | 예 | 운영에서는 `validate` | 배포 설정 |
 | `JWT_SECRET` | 예 | 관리자 로그인 토큰 서명 | EC2 `/etc/blog/runtime.env` |
 | `CORS_ALLOWED_ORIGINS` | 예 | 허용할 프론트 주소 | 배포 설정 |

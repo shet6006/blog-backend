@@ -49,21 +49,25 @@ docker run --detach --name "$container" \
   mariadb:10.5 >/dev/null
 
 for _ in $(seq 1 60); do
-  if docker exec "$container" healthcheck.sh --connect --innodb_initialized >/dev/null 2>&1; then
+  if docker exec -e MYSQL_PWD="$db_root_password" "$container" \
+      mariadb --batch --skip-column-names --user=root \
+      --execute='SELECT 1' >/dev/null 2>&1; then
     break
   fi
   sleep 2
 done
-docker exec "$container" healthcheck.sh --connect --innodb_initialized >/dev/null
+docker exec -e MYSQL_PWD="$db_root_password" "$container" \
+  mariadb --batch --skip-column-names --user=root \
+  --execute='SELECT 1' >/dev/null
 
 gzip -dc "$db_dump" \
-  | docker exec -i -e MARIADB_PWD="$db_root_password" "$container" \
+  | docker exec -i -e MYSQL_PWD="$db_root_password" "$container" \
       mariadb --user=root "$db_name"
 
 install -d -m 755 /srv/blog/uploads
 tar -xzf "$uploads_archive" -C /srv/blog/uploads
 
-table_count="$(docker exec -e MARIADB_PWD="$db_root_password" "$container" \
+table_count="$(docker exec -e MYSQL_PWD="$db_root_password" "$container" \
   mariadb --batch --skip-column-names --user=root \
   -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${db_name}'")"
 upload_count="$(find /srv/blog/uploads -type f | wc -l | tr -d ' ')"

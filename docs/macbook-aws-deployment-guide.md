@@ -92,6 +92,7 @@ DB_USER=blog
 DB_PASSWORD=<운영 DB 암호>
 DB_ROOT_PASSWORD=<운영 DB root 암호>
 DB_POOL_SIZE=5
+JAVA_TOOL_OPTIONS=-Xms128m -Xmx384m
 JWT_SECRET=<32바이트 이상의 무작위 문자열>
 CORS_ALLOWED_ORIGINS=https://kimdongwon.me,https://www.kimdongwon.me
 ```
