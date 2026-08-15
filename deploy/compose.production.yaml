@@ -17,7 +17,10 @@ services:
 
   backend:
     image: ${BACKEND_IMAGE}
+    ports:
+      - "127.0.0.1:8080:8080"
     environment:
+      SPRING_PROFILES_ACTIVE: prod
       DB_URL: jdbc:mysql://db:3306/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
@@ -37,18 +40,4 @@ services:
       timeout: 5s
       retries: 12
       start_period: 30s
-    restart: unless-stopped
-
-  frontend:
-    image: ${FRONTEND_IMAGE}
-    ports:
-      - "80:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
     restart: unless-stopped

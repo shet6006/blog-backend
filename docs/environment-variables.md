@@ -5,13 +5,13 @@
 | 변수 | 운영 필수 | 용도 | 운영 저장 위치 |
 |---|---:|---|---|
 | `DB_URL` | 예 | MariaDB JDBC 주소 | 배포 설정 |
-| `DB_USER` | 예 | 애플리케이션 DB 사용자 | Secrets Manager |
-| `DB_PASSWORD` | 예 | 애플리케이션 DB 암호 | Secrets Manager |
-| `DB_ROOT_PASSWORD` | 예 | MariaDB 관리자 암호 | Secrets Manager |
-| `DB_NAME` | 예 | DB 이름 | Parameter Store 또는 배포 설정 |
+| `DB_USER` | 예 | 애플리케이션 DB 사용자 | EC2 `/etc/blog/runtime.env` |
+| `DB_PASSWORD` | 예 | 애플리케이션 DB 암호 | EC2 `/etc/blog/runtime.env` |
+| `DB_ROOT_PASSWORD` | 예 | MariaDB 관리자 암호 | EC2 `/etc/blog/runtime.env` |
+| `DB_NAME` | 예 | DB 이름 | EC2 `/etc/blog/runtime.env` |
 | `DB_POOL_SIZE` | 아니오 | DB 연결 수 | 배포 설정 |
 | `JPA_DDL_AUTO` | 예 | 운영에서는 `validate` | 배포 설정 |
-| `JWT_SECRET` | 예 | 관리자 로그인 토큰 서명 | Secrets Manager |
+| `JWT_SECRET` | 예 | 관리자 로그인 토큰 서명 | EC2 `/etc/blog/runtime.env` |
 | `CORS_ALLOWED_ORIGINS` | 예 | 허용할 프론트 주소 | 배포 설정 |
 | `STORAGE_LOCATION` | 예 | 업로드 영구 경로 | 배포 설정 |
 | `SERVER_PORT` | 아니오 | 기본 8080 | 배포 설정 |

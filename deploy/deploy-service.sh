@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-service="${1:?usage: deploy-service.sh <frontend|backend> <image-uri>}"
-new_image="${2:?usage: deploy-service.sh <frontend|backend> <image-uri>}"
-
-case "$service" in
-  frontend) image_key=FRONTEND_IMAGE ;;
-  backend) image_key=BACKEND_IMAGE ;;
-  *) echo "unsupported service: $service" >&2; exit 2 ;;
-esac
+new_image="${1:?usage: deploy-service.sh <backend-image-uri>}"
+service=backend
+image_key=BACKEND_IMAGE
 
 stack_dir=/opt/blog
 runtime_env=/etc/blog/runtime.env
@@ -43,6 +38,8 @@ compose() {
 }
 
 install -m 600 "$candidate_images" "$images_env"
+
+compose up --detach db
 
 if compose pull "$service" && compose up --detach --no-deps "$service"; then
   for _ in $(seq 1 30); do
