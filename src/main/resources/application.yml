@@ -1,6 +1,8 @@
 spring:
   application:
     name: blog-backend
+  profiles:
+    default: local
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/blog?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
     username: ${DB_USER:blog}
