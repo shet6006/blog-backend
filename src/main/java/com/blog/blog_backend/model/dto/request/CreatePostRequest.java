@@ -15,6 +15,8 @@ public class CreatePostRequest {
     private String githubCommitUrl;
     @JsonProperty("is_public")
     private Boolean isPublic;
+    @JsonProperty("thumbnail_url")
+    private String thumbnailUrl;
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
@@ -26,4 +28,6 @@ public class CreatePostRequest {
     public void setGithubCommitUrl(String githubCommitUrl) { this.githubCommitUrl = githubCommitUrl; }
     public Boolean getIsPublic() { return isPublic; }
     public void setIsPublic(Boolean isPublic) { this.isPublic = isPublic; }
+    public String getThumbnailUrl() { return thumbnailUrl; }
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
 }

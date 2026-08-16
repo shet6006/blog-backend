@@ -225,6 +225,9 @@ sudo env BLOG_RESTORE_CONFIRM=NEW_BLOG_EMPTY_DATABASE \
 
 sudo env BLOG_SCHEMA_MIGRATION_CONFIRM=NEW_BLOG_DATABASE \
   deploy/migrate-legacy-schema.sh
+
+# 썸네일 기능을 처음 배포할 때 한 번 실행(재실행해도 안전)
+sudo deploy/migrate-post-thumbnail.sh
 ```
 
 복원 스크립트는 빈 대상 DB에서만 실행한다. 다른 AWS 계정으로 옮길 때는 S3, ECR,

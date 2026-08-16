@@ -48,7 +48,7 @@ jobs:
           mkdir revision
           cp codedeploy/appspec.yml revision/appspec.yml
           cp -R codedeploy/scripts revision/scripts
-          cp deploy/compose.production.yaml deploy/deploy-service.sh deploy/nginx-blog.conf revision/
+          cp deploy/compose.production.yaml deploy/deploy-service.sh deploy/migrate-post-thumbnail.sh deploy/nginx-blog.conf revision/
           printf '%s\n' "$IMAGE_URI" > revision/image-uri.txt
           printf '%s\n' "$AWS_REGION" > revision/aws-region.txt
           cd revision

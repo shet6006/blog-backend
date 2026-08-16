@@ -14,6 +14,8 @@ public class UpdatePostRequest {
     @JsonProperty("is_public")
     private Boolean isPublic;
     private String slug;
+    @JsonProperty("thumbnail_url")
+    private String thumbnailUrl;
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
@@ -25,4 +27,6 @@ public class UpdatePostRequest {
     public void setIsPublic(Boolean isPublic) { this.isPublic = isPublic; }
     public String getSlug() { return slug; }
     public void setSlug(String slug) { this.slug = slug; }
+    public String getThumbnailUrl() { return thumbnailUrl; }
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
 }

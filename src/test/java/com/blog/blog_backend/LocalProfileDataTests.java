@@ -25,11 +25,13 @@ class LocalProfileDataTests {
     @Test
     void initializesLocalAdminAndSamplePost() {
         AdminProfile admin = adminRepository.findById("admin").orElseThrow();
-        Post post = postRepository.findBySlug("local-development-sample").orElseThrow();
+        Post post = postRepository.findBySlug("deployment-and-cicd-pipeline").orElseThrow();
 
-        assertThat(admin.getName()).isEqualTo("Local Admin");
+        assertThat(admin.getName()).isEqualTo("김동원");
+        assertThat(admin.getGithubUsername()).isEqualTo("DDONG");
         assertThat(new BCryptPasswordEncoder().matches("admin1234", admin.getPassword())).isTrue();
         assertThat(post.getAuthorId()).isEqualTo(admin.getId());
         assertThat(post.getIsPublic()).isTrue();
+        assertThat(postRepository.count()).isEqualTo(3);
     }
 }

@@ -74,12 +74,18 @@ public class AdminPostsController {
         req.setContent(content);
         req.setCategoryId(categoryId);
         req.setIsPublic(isPublic);
+        Object thumbnailObj = body.get("thumbnail_url");
+        req.setThumbnailUrl(thumbnailObj != null ? thumbnailObj.toString() : null);
         String authorId = authUtil.getUserIdFromToken(request);
 
         try {
             return ResponseEntity.ok(postService.create(req, authorId));
         } catch (RuntimeException e) {
-            if ("이미 사용 중인 슬러그입니다.".equals(e.getMessage()) || "이미 사용 중인 slug입니다.".equals(e.getMessage())) {
+            if ("이미 사용 중인 슬러그입니다.".equals(e.getMessage()) || "이미 사용 중인 slug입니다.".equals(e.getMessage())
+                    || "잘못된 카테고리입니다.".equals(e.getMessage())
+                    || "Missing required fields".equals(e.getMessage())
+                    || (e.getMessage() != null && (e.getMessage().contains("이미지를 최대")
+                    || e.getMessage().contains("너무 깁니다")))) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
             }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

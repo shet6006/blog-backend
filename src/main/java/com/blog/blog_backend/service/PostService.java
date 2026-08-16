@@ -24,12 +24,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 @Service
 public class PostService {
 
     private static final int TITLE_MAX = 255;
     private static final int CONTENT_MAX = 100000;
+    private static final int IMAGE_MAX = 20;
+    private static final Pattern MARKDOWN_IMAGE_PATTERN = Pattern.compile("!\\[[^\\]]*\\]\\([^\\)]*\\)");
 
     @Autowired
     private PostRepository postRepository;
@@ -140,6 +143,7 @@ public class PostService {
         post.setSlug(slug);
         post.setGithubCommitUrl(req.getGithubCommitUrl() != null && !req.getGithubCommitUrl().isBlank()
                 ? req.getGithubCommitUrl().trim() : null);
+        post.setThumbnailUrl(normalizeThumbnailUrl(req.getThumbnailUrl()));
         post.setIsPublic(req.getIsPublic() != null ? req.getIsPublic() : true);
         post.setAuthorId(authorId != null ? authorId : "admin");
 
@@ -156,13 +160,17 @@ public class PostService {
                 .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다."));
 
         if (req.getTitle() != null) post.setTitle(req.getTitle().trim());
-        if (req.getContent() != null) post.setContent(req.getContent());
+        if (req.getContent() != null) {
+            validateImageCount(req.getContent());
+            post.setContent(req.getContent());
+        }
         if (req.getCategoryId() != null) {
             Category category = categoryRepository.findById(req.getCategoryId().longValue())
                     .orElseThrow(() -> new RuntimeException("잘못된 카테고리입니다."));
             post.setCategory(category);
         }
         if (req.getIsPublic() != null) post.setIsPublic(req.getIsPublic());
+        post.setThumbnailUrl(normalizeThumbnailUrl(req.getThumbnailUrl()));
 
         String newSlug = req.getSlug() != null && !req.getSlug().isBlank() ? req.getSlug().trim() : slug;
         if (!newSlug.equals(slug)) {
@@ -201,9 +209,23 @@ public class PostService {
         if (req.getContent().length() > CONTENT_MAX) {
             throw new RuntimeException("내용이 너무 깁니다.");
         }
+        validateImageCount(req.getContent());
         if (req.getCategoryId() < 1) {
             throw new RuntimeException("잘못된 카테고리입니다.");
         }
+    }
+
+    private void validateImageCount(String content) {
+        long imageCount = MARKDOWN_IMAGE_PATTERN.matcher(content != null ? content : "").results().count();
+        if (imageCount > IMAGE_MAX) {
+            throw new RuntimeException("게시글에는 이미지를 최대 " + IMAGE_MAX + "장까지 넣을 수 있습니다.");
+        }
+    }
+
+    private String normalizeThumbnailUrl(String thumbnailUrl) {
+        if (thumbnailUrl == null || thumbnailUrl.isBlank()) return null;
+        if (thumbnailUrl.length() > 1000) throw new RuntimeException("썸네일 URL이 너무 깁니다.");
+        return thumbnailUrl.trim();
     }
 
     /** 기존 Next.js와 동일한 슬러그 생성 */
@@ -232,6 +254,7 @@ public class PostService {
         r.setCategoryName(p.getCategory() != null ? p.getCategory().getName() : null);
         r.setSlug(p.getSlug());
         r.setGithubCommitUrl(p.getGithubCommitUrl());
+        r.setThumbnailUrl(p.getThumbnailUrl());
         r.setIsPublic(p.getIsPublic());
         r.setAuthorId(p.getAuthorId());
         r.setLikesCount(p.getLikesCount() != null ? p.getLikesCount() : 0);

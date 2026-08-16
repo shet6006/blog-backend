@@ -27,6 +27,8 @@ public class PostResponse {
     private String slug;
     @JsonProperty("github_commit_url")
     private String githubCommitUrl;
+    @JsonProperty("thumbnail_url")
+    private String thumbnailUrl;
     @JsonProperty("is_public")
     private Boolean isPublic;
     @JsonProperty("author_id")
@@ -57,6 +59,8 @@ public class PostResponse {
     public void setSlug(String slug) { this.slug = slug; }
     public String getGithubCommitUrl() { return githubCommitUrl; }
     public void setGithubCommitUrl(String githubCommitUrl) { this.githubCommitUrl = githubCommitUrl; }
+    public String getThumbnailUrl() { return thumbnailUrl; }
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
     public Boolean getIsPublic() { return isPublic; }
     public void setIsPublic(Boolean isPublic) { this.isPublic = isPublic; }
     public String getAuthorId() { return authorId; }

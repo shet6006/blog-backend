@@ -5,11 +5,17 @@ files:
     destination: /opt/blog
   - source: deploy-service.sh
     destination: /opt/blog
+  - source: migrate-post-thumbnail.sh
+    destination: /opt/blog
   - source: nginx-blog.conf
     destination: /etc/nginx/conf.d
 file_exists_behavior: OVERWRITE
 permissions:
   - object: /opt/blog/deploy-service.sh
+    mode: 755
+    owner: root
+    group: root
+  - object: /opt/blog/migrate-post-thumbnail.sh
     mode: 755
     owner: root
     group: root

@@ -29,6 +29,9 @@ public class Post {
     @Column(name = "github_commit_url", length = 500)
     private String githubCommitUrl;
 
+    @Column(name = "thumbnail_url", length = 1000)
+    private String thumbnailUrl;
+
     @Column(name = "is_public")
     private Boolean isPublic;
 
@@ -75,6 +78,8 @@ public class Post {
     public String getGithubCommitUrl() {
         return githubCommitUrl;
     }
+
+    public String getThumbnailUrl() { return thumbnailUrl; }
 
     public Boolean getIsPublic() {
         return isPublic;
@@ -132,6 +137,8 @@ public class Post {
     public void setGithubCommitUrl(String githubCommitUrl) {
         this.githubCommitUrl = githubCommitUrl;
     }
+
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
 
     public void setIsPublic(Boolean isPublic) {
         this.isPublic = isPublic;
