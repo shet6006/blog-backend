@@ -1,0 +1,20 @@
+version: 0.0
+os: linux
+files:
+  - source: compose.production.yaml
+    destination: /opt/blog
+  - source: deploy-service.sh
+    destination: /opt/blog
+  - source: nginx-blog.conf
+    destination: /etc/nginx/conf.d
+file_exists_behavior: OVERWRITE
+permissions:
+  - object: /opt/blog/deploy-service.sh
+    mode: 755
+    owner: root
+    group: root
+hooks:
+  ApplicationStart:
+    - location: scripts/deploy.sh
+      timeout: 900
+      runas: root

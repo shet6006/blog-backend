@@ -1,24 +1,68 @@
-# blog-backend 백엔드 CD - master에 push/merge 시 EC2에서 pull → 빌드 → 재시작
-name: Deploy Blog Backend to EC2
+name: Deploy backend
 
 on:
   push:
     branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: blog-backend-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      CODEDEPLOY_APPLICATION: ${{ vars.CODEDEPLOY_APPLICATION }}
+      CODEDEPLOY_DEPLOYMENT_GROUP: ${{ vars.CODEDEPLOY_DEPLOYMENT_GROUP }}
+      CODEDEPLOY_BUCKET: ${{ vars.CODEDEPLOY_BUCKET }}
     steps:
-      - name: Deploy on EC2 (pull, build, restart)
-        uses: appleboy/ssh-action@v1.0.3
+      - uses: actions/checkout@v5
+
+      - uses: aws-actions/configure-aws-credentials@v5
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd /home/ec2-user/blogg/blog-backend
-            git pull origin master
-            ./mvnw -B package -DskipTests
-            pm2 restart blog-backend
-          script_stop: true
-          command_timeout: 15m
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          image="$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker build --tag "$image" .
+          docker push "$image"
+          echo "IMAGE_URI=$image" >> "$GITHUB_ENV"
+
+      - name: Create CodeDeploy revision
+        run: |
+          mkdir revision
+          cp codedeploy/appspec.yml revision/appspec.yml
+          cp -R codedeploy/scripts revision/scripts
+          cp deploy/compose.production.yaml deploy/deploy-service.sh deploy/nginx-blog.conf revision/
+          printf '%s\n' "$IMAGE_URI" > revision/image-uri.txt
+          printf '%s\n' "$AWS_REGION" > revision/aws-region.txt
+          cd revision
+          zip -qr ../revision.zip .
+
+      - name: Upload revision and deploy
+        run: |
+          key="codedeploy/blog-backend/${GITHUB_SHA}.zip"
+          aws s3 cp revision.zip "s3://$CODEDEPLOY_BUCKET/$key"
+          deployment_id="$(aws deploy create-deployment \
+            --application-name "$CODEDEPLOY_APPLICATION" \
+            --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP" \
+            --revision "revisionType=S3,s3Location={bucket=$CODEDEPLOY_BUCKET,key=$key,bundleType=zip}" \
+            --description "blog-backend ${GITHUB_SHA}" \
+            --query deploymentId \
+            --output text)"
+          aws deploy wait deployment-successful --deployment-id "$deployment_id"

@@ -21,7 +21,22 @@ target/
 
 # Spring Boot 로컬 설정
 **/application-local.yml
-**/application.yml
+!src/main/resources/application-local.yml
+
+# Local and production secrets/backups
+.env
+.env.*
+!.env.example
+runtime.env
+images.env
+.keys/
+*.pem
+*.key
+*.sql
+*.sql.gz
+*.tar.gz
+migration-backup/
+data/
 
 ### NetBeans ###
 /nbproject/private/
