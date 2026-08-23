@@ -10,18 +10,18 @@ import java.util.List;
 public class PostListResponse {
 
     @JsonProperty("posts")
-    private List<PostResponse> posts;
+    private List<PostSummaryResponse> posts;
 
     @JsonProperty("pagination")
     private PaginationInfo pagination;
 
-    public PostListResponse(List<PostResponse> posts, PaginationInfo pagination) {
+    public PostListResponse(List<PostSummaryResponse> posts, PaginationInfo pagination) {
         this.posts = posts;
         this.pagination = pagination;
     }
 
-    public List<PostResponse> getPosts() { return posts; }
-    public void setPosts(List<PostResponse> posts) { this.posts = posts; }
+    public List<PostSummaryResponse> getPosts() { return posts; }
+    public void setPosts(List<PostSummaryResponse> posts) { this.posts = posts; }
     public PaginationInfo getPagination() { return pagination; }
     public void setPagination(PaginationInfo pagination) { this.pagination = pagination; }
 
@@ -41,14 +41,5 @@ public class PostListResponse {
             this.total = total;
             this.totalPages = (int) Math.ceil((double) total / limit);
         }
-
-        public int getPage() { return page; }
-        public void setPage(int page) { this.page = page; }
-        public int getLimit() { return limit; }
-        public void setLimit(int limit) { this.limit = limit; }
-        public long getTotal() { return total; }
-        public void setTotal(long total) { this.total = total; }
-        public int getTotalPages() { return totalPages; }
-        public void setTotalPages(int totalPages) { this.totalPages = totalPages; }
     }
 }

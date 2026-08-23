@@ -38,11 +38,10 @@ public class PostController {
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(defaultValue = "false") boolean includePrivate,
             @RequestParam(defaultValue = "created_at") String sortBy) {
         try {
-            PostListResponse result = postService.findAll(
-                    includePrivate, category, search, page, limit, sortBy);
+            PostListResponse result = postService.findPublicPosts(
+                    category, search, page, limit, sortBy);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             e.printStackTrace();

@@ -2,28 +2,27 @@ package com.blog.blog_backend.service;
 
 import com.blog.blog_backend.model.dto.request.CreatePostRequest;
 import com.blog.blog_backend.model.dto.request.UpdatePostRequest;
+import com.blog.blog_backend.model.dto.response.AdminPostListResponse;
+import com.blog.blog_backend.model.dto.response.AdminPostSummaryResponse;
 import com.blog.blog_backend.model.dto.response.PostListResponse;
 import com.blog.blog_backend.model.dto.response.PostResponse;
+import com.blog.blog_backend.model.dto.response.PostSummaryResponse;
 import com.blog.blog_backend.model.entity.Category;
 import com.blog.blog_backend.model.entity.Post;
 import com.blog.blog_backend.repository.CategoryRepository;
 import com.blog.blog_backend.repository.PostRepository;
+import com.blog.blog_backend.repository.projection.AdminPostSummaryProjection;
+import com.blog.blog_backend.repository.projection.PublicPostSummaryProjection;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Predicate;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @Service
@@ -33,6 +32,7 @@ public class PostService {
     private static final int CONTENT_MAX = 100000;
     private static final int IMAGE_MAX = 20;
     private static final Pattern MARKDOWN_IMAGE_PATTERN = Pattern.compile("!\\[[^\\]]*\\]\\([^\\)]*\\)");
+    private static final Pattern MARKDOWN_IMAGE_URL_PATTERN = Pattern.compile("!\\[[^\\]]*\\]\\((?:<)?([^\\s)>]+)");
 
     @Autowired
     private PostRepository postRepository;
@@ -41,7 +41,6 @@ public class PostService {
 
     /**
      * GET /api/posts - 게시글 목록 조회 (기존 Next.js PostModel.findAll과 동일)
-     * @param includePrivate true면 비공개 포함 (관리자용)
      * @param category 카테고리 이름, null/"All"이면 전체
      * @param search 검색어 (제목/내용/카테고리명)
      * @param page 1-based
@@ -49,8 +48,8 @@ public class PostService {
      * @param sortBy "likes" 또는 "created_at"
      */
     @Transactional(readOnly = true)
-    public PostListResponse findAll(boolean includePrivate, String category, String search,
-                                    int page, int limit, String sortBy) {
+    public PostListResponse findPublicPosts(String category, String search,
+                                            int page, int limit, String sortBy) {
         // 페이지네이션 제한 (기존 Next.js와 동일)
         int validatedPage = page < 1 ? 1 : Math.min(page, 1000);
         int validatedLimit = limit < 1 ? 10 : Math.min(limit, 100);
@@ -61,46 +60,40 @@ public class PostService {
                 : Sort.by(Sort.Direction.DESC, "createdAt");
         Pageable pageable = PageRequest.of(validatedPage - 1, validatedLimit, sort);
 
-        Specification<Post> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            // 비공개 제외 (includePrivate=false면 공개만)
-            if (!includePrivate) {
-                predicates.add(cb.equal(root.get("isPublic"), true));
-            }
-
-            // category 또는 search 시에만 category 조인 (한 번만)
-            boolean needCategoryJoin = (category != null && !category.isBlank() && !"All".equals(category))
-                    || (searchTerm != null && !searchTerm.isBlank());
-
-            if (needCategoryJoin) {
-                var catJoin = root.join("category", JoinType.LEFT);
-                if (category != null && !category.isBlank() && !"All".equals(category)) {
-                    predicates.add(cb.equal(catJoin.get("name"), category));
-                }
-                if (searchTerm != null && !searchTerm.isBlank()) {
-                    String pattern = "%" + searchTerm + "%";
-                    predicates.add(cb.or(
-                            cb.like(root.get("title"), pattern),
-                            cb.like(root.get("content"), pattern),
-                            cb.like(catJoin.get("name"), pattern)
-                    ));
-                }
-            }
-
-            query.distinct(true);  // JOIN 시 중복 행 방지
-            return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
-        };
-
-        Page<Post> postPage = postRepository.findAll(spec, pageable);
-        List<PostResponse> posts = postPage.getContent().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        boolean filterSearch = searchTerm != null && !searchTerm.isBlank();
+        String categoryFilter = category != null && !category.isBlank() && !"All".equals(category)
+                ? category : "";
+        Page<PublicPostSummaryProjection> postPage = postRepository.findPublicSummaries(
+                categoryFilter,
+                filterSearch, filterSearch ? searchTerm : "",
+                pageable);
+        List<PostSummaryResponse> posts = postPage.getContent().stream()
+                .map(this::toPostSummaryResponse)
+                .toList();
 
         var pagination = new PostListResponse.PaginationInfo(
                 validatedPage, validatedLimit, postPage.getTotalElements());
 
         return new PostListResponse(posts, pagination);
+    }
+
+    @Transactional(readOnly = true)
+    public AdminPostListResponse findAdminPosts(int page, int limit) {
+        int validatedPage = page < 1 ? 1 : Math.min(page, 1000);
+        int validatedLimit = limit < 1 ? 10 : Math.min(limit, 100);
+        Pageable pageable = PageRequest.of(
+                validatedPage - 1,
+                validatedLimit,
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<AdminPostSummaryProjection> postPage = postRepository.findAdminSummaries(pageable);
+        List<AdminPostSummaryResponse> posts = postPage.getContent().stream()
+                .map(this::toAdminPostSummaryResponse)
+                .toList();
+        var pagination = new PostListResponse.PaginationInfo(
+                validatedPage, validatedLimit, postPage.getTotalElements());
+
+        return new AdminPostListResponse(posts, pagination);
     }
 
     /**
@@ -143,7 +136,7 @@ public class PostService {
         post.setSlug(slug);
         post.setGithubCommitUrl(req.getGithubCommitUrl() != null && !req.getGithubCommitUrl().isBlank()
                 ? req.getGithubCommitUrl().trim() : null);
-        post.setThumbnailUrl(normalizeThumbnailUrl(req.getThumbnailUrl()));
+        post.setThumbnailUrl(resolveThumbnailUrl(req.getThumbnailUrl(), req.getContent()));
         post.setIsPublic(req.getIsPublic() != null ? req.getIsPublic() : true);
         post.setAuthorId(authorId != null ? authorId : "admin");
 
@@ -170,7 +163,7 @@ public class PostService {
             post.setCategory(category);
         }
         if (req.getIsPublic() != null) post.setIsPublic(req.getIsPublic());
-        post.setThumbnailUrl(normalizeThumbnailUrl(req.getThumbnailUrl()));
+        post.setThumbnailUrl(resolveThumbnailUrl(req.getThumbnailUrl(), post.getContent()));
 
         String newSlug = req.getSlug() != null && !req.getSlug().isBlank() ? req.getSlug().trim() : slug;
         if (!newSlug.equals(slug)) {
@@ -228,6 +221,13 @@ public class PostService {
         return thumbnailUrl.trim();
     }
 
+    private String resolveThumbnailUrl(String thumbnailUrl, String content) {
+        String normalized = normalizeThumbnailUrl(thumbnailUrl);
+        if (normalized != null) return normalized;
+        var matcher = MARKDOWN_IMAGE_URL_PATTERN.matcher(content != null ? content : "");
+        return matcher.find() ? matcher.group(1) : null;
+    }
+
     /** 기존 Next.js와 동일한 슬러그 생성 */
     private String generateSlugFromTitle(String title) {
         if (title == null) return "";
@@ -262,5 +262,30 @@ public class PostService {
         r.setCreatedAt(p.getCreatedAt());
         r.setUpdatedAt(p.getUpdatedAt());
         return r;
+    }
+
+    private PostSummaryResponse toPostSummaryResponse(PublicPostSummaryProjection p) {
+        return new PostSummaryResponse(
+                p.getId(),
+                p.getTitle(),
+                p.getExcerpt(),
+                p.getCategoryName(),
+                p.getSlug(),
+                p.getThumbnailUrl(),
+                p.getLikesCount(),
+                p.getCommentsCount(),
+                p.getCreatedAt());
+    }
+
+    private AdminPostSummaryResponse toAdminPostSummaryResponse(AdminPostSummaryProjection p) {
+        return new AdminPostSummaryResponse(
+                p.getId(),
+                p.getTitle(),
+                p.getCategoryName(),
+                p.getSlug(),
+                p.getIsPublic(),
+                p.getLikesCount(),
+                p.getCommentsCount(),
+                p.getCreatedAt());
     }
 }

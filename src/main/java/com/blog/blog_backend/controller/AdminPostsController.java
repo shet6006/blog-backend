@@ -14,7 +14,7 @@ import java.util.Map;
 
 /**
  * GET/POST /api/admin/posts - 기존 blog와 완전 동일 (관리자용)
- * GET: 모든 게시글 (includePrivate=true와 동일)
+ * GET: 모든 게시글
  * POST: 게시글 생성 (관리자 인증 필수)
  */
 @RestController
@@ -37,7 +37,7 @@ public class AdminPostsController {
                     .body(Map.of("error", "인증되지 않은 요청입니다."));
         }
         try {
-            return ResponseEntity.ok(postService.findAll(true, null, null, page, limit, "created_at"));
+            return ResponseEntity.ok(postService.findAdminPosts(page, limit));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "게시글 목록 조회 중 오류가 발생했습니다."));

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
 /**
- * GET /api/posts, GET /api/posts/{slug} 응답 (기존 blog와 동일한 필드명: snake_case)
+ * GET /api/posts/{slug} 및 게시글 쓰기 응답 (기존 blog와 동일한 필드명: snake_case)
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PostResponse {
