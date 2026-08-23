@@ -9,6 +9,7 @@ import com.blog.blog_backend.repository.CommentRepository;
 import com.blog.blog_backend.repository.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -131,6 +132,7 @@ public class CommentService {
      * DELETE /api/comments/{slug}
      * body에 commentId 있으면 해당 댓글만(post_id 일치 시), 없으면 해당 글 댓글 전부 삭제 후 comments_count 갱신.
      */
+    @Transactional
     public void deleteComment(String slug, Long commentId) {
         Post post = postRepository.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다."));
