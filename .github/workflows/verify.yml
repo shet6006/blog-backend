@@ -2,9 +2,13 @@ name: Verify backend
 
 on:
   pull_request:
+    paths-ignore:
+      - "docs/**"
   push:
     branches-ignore:
       - master
+    paths-ignore:
+      - "docs/**"
 
 permissions:
   contents: read
