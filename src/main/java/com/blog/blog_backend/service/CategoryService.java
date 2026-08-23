@@ -3,12 +3,13 @@ package com.blog.blog_backend.service;
 import com.blog.blog_backend.model.dto.response.CategoryResponse;
 import com.blog.blog_backend.model.entity.Category;
 import com.blog.blog_backend.repository.CategoryRepository;
+import com.blog.blog_backend.repository.projection.CategoryWithPostCountProjection;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 
 @SuppressWarnings("null")
@@ -19,21 +20,11 @@ public class CategoryService {
     private CategoryRepository categoryRepository;
 
     // 모든 카테고리 조회 (게시글 수 포함) - 기존 백엔드와 동일
+    @Transactional(readOnly = true)
     public List<CategoryResponse> findAll() {
-        List<Category> categories = categoryRepository.findAll();
-        return categories.stream().map(category -> {
-            CategoryResponse response = new CategoryResponse();
-            response.setId(category.getId());
-            response.setName(category.getName());
-            response.setSlug(category.getSlug());
-            response.setCreatedAt(category.getCreatedAt());
-
-            // 게시글 수 조회
-            Long postCount = categoryRepository.countPostsByCategoryId(category.getId());
-            response.setPostCount(postCount != null ? postCount : 0L);
-
-            return response;
-        }).collect(Collectors.toList());
+        return categoryRepository.findAllWithPostCount().stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     // ID로 카테고리 조회
@@ -62,14 +53,22 @@ public class CategoryService {
 
     // Entity -> CategoryResponse 변환
     private CategoryResponse toResponse(Category category) {
-        CategoryResponse response = new CategoryResponse();
-        response.setId(category.getId());
-        response.setName(category.getName());
-        response.setSlug(category.getSlug());
-        response.setCreatedAt(category.getCreatedAt());
         Long postCount = categoryRepository.countPostsByCategoryId(category.getId());
-        response.setPostCount(postCount != null ? postCount : 0L);
-        return response;
+        return new CategoryResponse(
+                category.getId(),
+                category.getName(),
+                category.getSlug(),
+                postCount != null ? postCount : 0L,
+                category.getCreatedAt());
+    }
+
+    private CategoryResponse toResponse(CategoryWithPostCountProjection category) {
+        return new CategoryResponse(
+                category.getId(),
+                category.getName(),
+                category.getSlug(),
+                category.getPostCount(),
+                category.getCreatedAt());
     }
 
     // 카테고리 생성 - 기존 백엔드와 동일한 슬러그 생성 로직

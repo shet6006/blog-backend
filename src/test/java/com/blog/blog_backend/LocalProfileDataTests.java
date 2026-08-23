@@ -4,6 +4,7 @@ import com.blog.blog_backend.model.entity.AdminProfile;
 import com.blog.blog_backend.model.entity.Post;
 import com.blog.blog_backend.repository.AdminRepository;
 import com.blog.blog_backend.repository.PostRepository;
+import com.blog.blog_backend.service.CategoryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +22,8 @@ class LocalProfileDataTests {
 
     @Autowired
     private PostRepository postRepository;
+    @Autowired
+    private CategoryService categoryService;
 
     @Test
     void initializesLocalAdminAndSamplePost() {
@@ -33,5 +36,14 @@ class LocalProfileDataTests {
         assertThat(post.getAuthorId()).isEqualTo(admin.getId());
         assertThat(post.getIsPublic()).isTrue();
         assertThat(postRepository.count()).isEqualTo(3);
+    }
+
+    @Test
+    void aggregatesPublicPostCountsWithCategories() {
+        long categoryPostCount = categoryService.findAll().stream()
+                .mapToLong(category -> category.getPostCount())
+                .sum();
+
+        assertThat(categoryPostCount).isEqualTo(postRepository.countPublicPosts());
     }
 }
